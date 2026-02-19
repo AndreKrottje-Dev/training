@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+    <title>Andre Coach</title>
+    <meta name="description" content="Training, voeding en InBody metingen bijhouden (offline PWA)." />
+
+    <!-- iOS PWA -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Andre Coach" />
+    <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
+
+    <!-- PWA -->
+    <meta name="theme-color" content="#0A84FF" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <link rel="icon" href="/assets/icon-192.png" sizes="192x192" />
+    <link rel="icon" href="/assets/icon-512.png" sizes="512x512" />
+
+    <link rel="stylesheet" href="/css/styles.css" />
+  </head>
+  <body>
+    <noscript>Deze app heeft JavaScript nodig.</noscript>
+
+    <div id="app" class="app">
+      <header class="topbar" role="banner">
+        <div class="topbar__safe">
+          <div class="topbar__title" id="topbarTitle">Andre Coach</div>
+          <div class="topbar__right" id="topbarRight"></div>
+        </div>
+      </header>
+
+      <main class="content" id="content" role="main"></main>
+
+      <nav class="tabbar" role="navigation" aria-label="Tabbalk">
+        <div class="tabbar__safe">
+          <a class="tab" href="#/vandaag" data-tab="vandaag" aria-label="Vandaag">
+            <span class="tab__icon" aria-hidden="true">●</span>
+            <span class="tab__label">Vandaag</span>
+          </a>
+          <a class="tab" href="#/training" data-tab="training" aria-label="Training">
+            <span class="tab__icon" aria-hidden="true">▮</span>
+            <span class="tab__label">Training</span>
+          </a>
+          <a class="tab" href="#/voeding" data-tab="voeding" aria-label="Voeding">
+            <span class="tab__icon" aria-hidden="true">◼</span>
+            <span class="tab__label">Voeding</span>
+          </a>
+          <a class="tab" href="#/inbody" data-tab="inbody" aria-label="InBody">
+            <span class="tab__icon" aria-hidden="true">▲</span>
+            <span class="tab__label">InBody</span>
+          </a>
+          <a class="tab" href="#/profiel" data-tab="profiel" aria-label="Profiel">
+            <span class="tab__icon" aria-hidden="true">■</span>
+            <span class="tab__label">Profiel</span>
+          </a>
+        </div>
+      </nav>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+    <script type="module" src="/js/app.js"></script>
+  </body>
+</html>
+
