@@ -1,4 +1,4 @@
-const APP_VERSION = 1;
+const APP_VERSION = 2;
 const STORAGE_KEY = "andre_coach_state_v1";
 
 // Seed data based on your message + the latest InBody sheet photo you shared.
@@ -9,17 +9,25 @@ const SEED_STATE = {
     name: "Andre",
     sex: "Man",
     birthdate: "1968-07-12",
-    heightCm: 183
+    heightCm: 183,
+    // Default target based on your InBody printout (recommended calories).
+    calorieTargetKcal: 2220
   },
   ui: {
-    selectedDate: isoDateToday()
+    selectedDate: isoDateToday(),
+    calendarMonth: isoDateToday().slice(0, 7) // YYYY-MM
+  },
+  templates: {
+    // weekly[0..6] (0=Monday) -> { training: TemplateTask[], voeding: TemplateTask[] }
+    weekly: {}
   },
   plans: {
-    // dateKey -> { training: Task[], voeding: Task[] }
+    // dateKey -> DayPlan
     byDate: {}
   },
   inbody: {
-    nextMeasurementDate: "2026-04-01",
+    scheduleStartDate: "2026-04-01",
+    intervalDays: 42,
     measurements: [
       {
         date: "2026-02-18",
@@ -146,6 +154,7 @@ function render() {
     els.topbarTitle.textContent = "Vandaag";
     els.topbarRight.appendChild(datePicker(selectedDate, (d) => {
       state.ui.selectedDate = d;
+      state.ui.calendarMonth = d.slice(0, 7);
       saveState();
       render();
     }));
@@ -157,6 +166,7 @@ function render() {
     els.topbarTitle.textContent = "Training";
     els.topbarRight.appendChild(datePicker(selectedDate, (d) => {
       state.ui.selectedDate = d;
+      state.ui.calendarMonth = d.slice(0, 7);
       saveState();
       render();
     }));
@@ -168,6 +178,7 @@ function render() {
     els.topbarTitle.textContent = "Voeding";
     els.topbarRight.appendChild(datePicker(selectedDate, (d) => {
       state.ui.selectedDate = d;
+      state.ui.calendarMonth = d.slice(0, 7);
       saveState();
       render();
     }));
@@ -197,40 +208,18 @@ function render() {
 function viewVandaag(dateKey) {
   const wrap = document.createElement("div");
 
-  const dayCard = card("Overzicht", []);
-  dayCard.appendChild(p(`${formatDateNL(dateKey)} • ${state.profile.name}`));
+  const calCard = card("Agenda", []);
+  calCard.appendChild(p(`${state.profile.name} • ${formatDateNL(dateKey)}`));
+  calCard.appendChild(divSpacer(10));
+  calCard.appendChild(calendarWidget(dateKey));
+  wrap.appendChild(calCard);
 
-  const t = ensureDay(dateKey).training;
-  const v = ensureDay(dateKey).voeding;
+  wrap.appendChild(dayPlanCard(dateKey));
+  wrap.appendChild(dayScoreCard(dateKey));
+  wrap.appendChild(dayLogCard(dateKey));
 
-  dayCard.appendChild(sectionProgress("Training", t));
-  dayCard.appendChild(sectionProgress("Voeding", v));
-
-  const hintEl = document.createElement("div");
-  hintEl.className = "hint";
-  hintEl.textContent = "Tip: gebruik Training/Voeding tabs om items toe te voegen en af te vinken.";
-  dayCard.appendChild(divSpacer(10));
-  dayCard.appendChild(hintEl);
-
-  wrap.appendChild(dayCard);
-
-  const next = state.inbody?.nextMeasurementDate;
-  if (next) {
-    const dueCard = card("Volgende InBody", []);
-    const deltaDays = daysBetween(isoDateToday(), next);
-    const chip = document.createElement("span");
-    chip.className = "chip " + (deltaDays < 0 ? "bad" : deltaDays <= 10 ? "warn" : "ok");
-    chip.textContent = deltaDays < 0 ? "Te laat" : `Over ${deltaDays} dagen`;
-
-    const title = document.createElement("div");
-    title.className = "card__title";
-    title.textContent = formatDateNL(next);
-    title.appendChild(chip);
-    dueCard.insertBefore(title, dueCard.firstChild);
-
-    dueCard.appendChild(p("Je gaf aan dat je elke 6 weken meet. Voeg op 1 april de nieuwe meting toe bij InBody."));
-    wrap.appendChild(dueCard);
-  }
+  const due = inbodyDueCard();
+  if (due) wrap.appendChild(due);
 
   return wrap;
 }
@@ -284,6 +273,20 @@ function viewInBody() {
   const m = state.inbody.measurements.slice().sort((a, b) => (a.date < b.date ? 1 : -1));
   const latest = m[0];
 
+  const schedule = card("Schema", []);
+  const next = nextInbodyDate();
+  if (next) {
+    schedule.appendChild(p(`Volgende meting: ${formatDateNL(next)} (elke ${state.inbody.intervalDays || 42} dagen).`));
+    const upcoming = upcomingInbodyDates(4);
+    const s = document.createElement("div");
+    s.className = "small";
+    s.style.marginTop = "8px";
+    s.textContent = `Komend: ${upcoming.map(formatDateNL).join(" • ")}`;
+    schedule.appendChild(s);
+  } else {
+    schedule.appendChild(p("Stel een startdatum in onder Profiel."));
+  }
+
   const summary = card("Laatste meting", []);
   if (latest) {
     const header = document.createElement("div");
@@ -321,12 +324,23 @@ function viewInBody() {
   }
 
   const add = card("Nieuwe meting toevoegen", []);
-  add.appendChild(p("Voeg je volgende InBody in op 1 april 2026 (of een andere datum)."));
+  add.appendChild(p("Upload je InBody foto('s) en/of vul de belangrijkste waarden in."));
   add.appendChild(divSpacer(10));
   add.appendChild(inbodyForm());
 
+  const list = card("Metingen", []);
+  if (m.length === 0) {
+    list.appendChild(p("Nog geen metingen."));
+  } else {
+    for (const meas of m) {
+      list.appendChild(inbodyMeasurementCard(meas));
+    }
+  }
+
+  wrap.appendChild(schedule);
   wrap.appendChild(summary);
   wrap.appendChild(charts);
+  wrap.appendChild(list);
   wrap.appendChild(add);
 
   return wrap;
@@ -342,6 +356,46 @@ function viewProfiel() {
     { label: "Geboortedatum", value: formatDateNL(state.profile.birthdate) },
     { label: "Lengte", value: `${state.profile.heightCm} cm` }
   ]));
+
+  const goals = card("Doelen", []);
+  goals.appendChild(p("Stel je calorie target in (wordt gebruikt voor de dagscore)."));
+  goals.appendChild(divSpacer(10));
+  const g = document.createElement("div");
+  g.className = "grid2";
+  const calTarget = field("Calorie target (kcal)", inputInt(state.profile.calorieTargetKcal));
+  calTarget.querySelector("input").addEventListener("change", () => {
+    state.profile.calorieTargetKcal = parseIntOrNull(calTarget.querySelector("input").value) ?? state.profile.calorieTargetKcal;
+    saveState();
+    render();
+  });
+  g.appendChild(calTarget);
+  goals.appendChild(g);
+
+  const inbodySettings = card("InBody schema", []);
+  inbodySettings.appendChild(p("6-wekelijks schema vanaf startdatum."));
+  inbodySettings.appendChild(divSpacer(10));
+  const ib = document.createElement("div");
+  ib.className = "grid2";
+  const start = field("Startdatum", inputDate(state.inbody.scheduleStartDate || "2026-04-01"));
+  const interval = field("Interval (dagen)", inputInt(state.inbody.intervalDays || 42));
+  start.querySelector("input").addEventListener("change", () => {
+    state.inbody.scheduleStartDate = start.querySelector("input").value;
+    saveState();
+    render();
+  });
+  interval.querySelector("input").addEventListener("change", () => {
+    state.inbody.intervalDays = parseIntOrNull(interval.querySelector("input").value) || 42;
+    saveState();
+    render();
+  });
+  ib.appendChild(start);
+  ib.appendChild(interval);
+  inbodySettings.appendChild(ib);
+
+  const tpl = card("Weektemplate (schema)", []);
+  tpl.appendChild(p("Definieer je vaste schema per week. Dit verschijnt automatisch in je agenda per dag."));
+  tpl.appendChild(divSpacer(10));
+  tpl.appendChild(weeklyTemplateEditor());
 
   const data = card("Data", []);
   data.appendChild(p("Alles staat lokaal op dit toestel (geen login)."));
@@ -379,10 +433,334 @@ function viewProfiel() {
   pwa.appendChild(p("Open deze app in Safari op iOS, tik op Deel, en kies ‘Zet op beginscherm’. Daarna werkt hij als PWA (standalone)."));
 
   wrap.appendChild(card1);
+  wrap.appendChild(goals);
+  wrap.appendChild(inbodySettings);
+  wrap.appendChild(tpl);
   wrap.appendChild(data);
   wrap.appendChild(importCard);
   wrap.appendChild(pwa);
   return wrap;
+}
+
+// ----------------------------
+// Agenda / Day view
+// ----------------------------
+
+function calendarWidget(selectedDate) {
+  const w = document.createElement("div");
+  w.className = "cal";
+
+  const monthKey = state.ui.calendarMonth || selectedDate.slice(0, 7);
+
+  const head = document.createElement("div");
+  head.className = "cal__head";
+
+  const left = button("◀", "", () => {
+    state.ui.calendarMonth = addMonths(monthKey + "-01", -1).slice(0, 7);
+    saveState();
+    render();
+  });
+  left.style.padding = "8px 10px";
+
+  const right = button("▶", "", () => {
+    state.ui.calendarMonth = addMonths(monthKey + "-01", 1).slice(0, 7);
+    saveState();
+    render();
+  });
+  right.style.padding = "8px 10px";
+
+  const mid = document.createElement("div");
+  mid.className = "cal__month";
+  mid.textContent = formatMonthNL(monthKey);
+
+  head.appendChild(left);
+  head.appendChild(mid);
+  head.appendChild(right);
+  w.appendChild(head);
+
+  const grid = document.createElement("div");
+  grid.className = "cal__grid";
+
+  const dows = ["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"];
+  for (const d of dows) {
+    const el = document.createElement("div");
+    el.className = "cal__dow";
+    el.textContent = d;
+    grid.appendChild(el);
+  }
+
+  const cells = calendarCells(monthKey); // 42 items
+  for (const c of cells) {
+    const cell = document.createElement("div");
+    cell.className = "cal__day" + (c.isOut ? " is-out" : "") + (c.dateKey === selectedDate ? " is-selected" : "");
+    cell.setAttribute("role", "button");
+    cell.setAttribute("tabindex", "0");
+    cell.setAttribute("aria-label", formatDateNL(c.dateKey));
+
+    const num = document.createElement("div");
+    num.className = "cal__num";
+    num.textContent = String(parseInt(c.dateKey.slice(8, 10), 10));
+    cell.appendChild(num);
+
+    const meta = document.createElement("div");
+    meta.className = "cal__meta";
+
+    const dayView = getDayView(c.dateKey);
+    const stats = calcDayStats(c.dateKey, dayView);
+    const badge = document.createElement("span");
+    badge.className = "badge " + badgeClass(stats.scorePct);
+    badge.textContent = stats.scorePct === null ? "—" : `${stats.scorePct}%`;
+    meta.appendChild(badge);
+
+    cell.appendChild(meta);
+
+    const activate = () => {
+      state.ui.selectedDate = c.dateKey;
+      // Keep month aligned with selected date.
+      state.ui.calendarMonth = c.dateKey.slice(0, 7);
+      saveState();
+      render();
+    };
+    cell.addEventListener("click", activate);
+    cell.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        activate();
+      }
+    });
+
+    grid.appendChild(cell);
+  }
+
+  w.appendChild(grid);
+  return w;
+}
+
+function dayPlanCard(dateKey) {
+  const dayView = getDayView(dateKey);
+  const wrap = card(`Schema • ${formatDateNL(dateKey)}`, []);
+
+  const stats = calcDayStats(dateKey, dayView);
+  const scoreRow = document.createElement("div");
+  scoreRow.style.display = "flex";
+  scoreRow.style.alignItems = "center";
+  scoreRow.style.justifyContent = "space-between";
+  scoreRow.style.gap = "10px";
+  const left = document.createElement("div");
+  left.className = "small";
+  left.textContent = "Dagscore";
+  const badge = document.createElement("span");
+  badge.className = "chip " + badgeClass(stats.scorePct);
+  badge.textContent = stats.scorePct === null ? "—" : `${stats.scorePct}%`;
+  scoreRow.appendChild(left);
+  scoreRow.appendChild(badge);
+  wrap.appendChild(scoreRow);
+
+  wrap.appendChild(sectionProgress("Totaal schema", [...dayView.training, ...dayView.voeding]));
+
+  const tTitle = document.createElement("div");
+  tTitle.className = "card__title";
+  tTitle.textContent = "Training";
+  const tAdd = button("Toevoegen", "primary", () => openAddTaskSheet(dateKey, "training"));
+  tAdd.style.padding = "8px 10px";
+  tTitle.appendChild(tAdd);
+  wrap.appendChild(tTitle);
+
+  const tList = document.createElement("div");
+  for (const task of dayView.training) tList.appendChild(taskRow(dateKey, "training", task));
+  if (dayView.training.length === 0) tList.appendChild(p("Geen training gepland voor deze dag."));
+  wrap.appendChild(tList);
+
+  wrap.appendChild(divSpacer(8));
+
+  const vTitle = document.createElement("div");
+  vTitle.className = "card__title";
+  vTitle.textContent = "Voeding";
+  const vAdd = button("Toevoegen", "primary", () => openAddTaskSheet(dateKey, "voeding"));
+  vAdd.style.padding = "8px 10px";
+  vTitle.appendChild(vAdd);
+  wrap.appendChild(vTitle);
+
+  const vList = document.createElement("div");
+  for (const task of dayView.voeding) vList.appendChild(taskRow(dateKey, "voeding", task));
+  if (dayView.voeding.length === 0) vList.appendChild(p("Geen voedingsitems gepland voor deze dag."));
+  wrap.appendChild(vList);
+
+  return wrap;
+}
+
+function dayScoreCard(dateKey) {
+  const dayView = getDayView(dateKey);
+  const stats = calcDayStats(dateKey, dayView);
+
+  const c = card("Score & Calorieen", []);
+
+  c.appendChild(kpiGrid([
+    { label: "Schema gehaald", value: stats.completionPct === null ? "—" : `${stats.completionPct}%` },
+    { label: "Calorie target", value: stats.targetKcal == null ? "—" : `${stats.targetKcal} kcal` },
+    { label: "Inname", value: stats.actualInKcal == null ? "—" : `${stats.actualInKcal} kcal` },
+    { label: "EGYM verbruik", value: stats.actualOutKcal == null ? "—" : `${stats.actualOutKcal} kcal` }
+  ]));
+
+  c.appendChild(divSpacer(10));
+
+  const net = document.createElement("div");
+  net.className = "small";
+  net.textContent = stats.netKcal == null ? "Netto: —" : `Netto (inname - verbruik): ${stats.netKcal} kcal`;
+  c.appendChild(net);
+
+  c.appendChild(divSpacer(10));
+
+  // Inputs
+  const form = document.createElement("div");
+  form.className = "grid2";
+
+  const day = ensureDay(dateKey); // materialize so edits persist
+  const inField = field("Calorie inname (kcal) (optioneel)", inputInt(day.manualCaloriesInKcal));
+  const outField = field("EGYM verbruik (kcal) (optioneel)", inputInt(day.manualCaloriesOutKcal));
+
+  inField.querySelector("input").addEventListener("change", () => {
+    day.manualCaloriesInKcal = parseIntOrNull(inField.querySelector("input").value);
+    saveState();
+    render();
+  });
+  outField.querySelector("input").addEventListener("change", () => {
+    day.manualCaloriesOutKcal = parseIntOrNull(outField.querySelector("input").value);
+    saveState();
+    render();
+  });
+
+  form.appendChild(inField);
+  form.appendChild(outField);
+  c.appendChild(form);
+
+  c.appendChild(divSpacer(10));
+
+  const scoreRow = document.createElement("div");
+  scoreRow.className = "hint";
+  scoreRow.textContent =
+    stats.scorePct === null
+      ? "Score: nog geen schema-items voor deze dag."
+      : `Score: ${stats.scorePct}% (schema + calorie-afwijking t.o.v. target)`;
+  c.appendChild(scoreRow);
+
+  return c;
+}
+
+function dayLogCard(dateKey) {
+  const dayView = getDayView(dateKey);
+  const day = ensureDay(dateKey); // persist actions
+
+  if (!Array.isArray(day.logEntries)) day.logEntries = [];
+
+  const c = card("Extra / Afwijkingen", []);
+  c.appendChild(p("Voeg toe wat je extra/niet hebt genomen of extra/niet hebt getraind. (Optioneel met kcal.)"));
+
+  const list = document.createElement("div");
+  for (const e of day.logEntries.slice().sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))) {
+    const r = document.createElement("div");
+    r.className = "row";
+    const l = document.createElement("div");
+    l.className = "row__left";
+    const t = document.createElement("div");
+    t.className = "row__title";
+    t.textContent = e.title || "(zonder titel)";
+    const s = document.createElement("div");
+    s.className = "row__subtitle";
+    s.textContent = `${labelForLogType(e.type)}${typeof e.kcal === "number" ? ` • ${e.kcal > 0 ? "+" : ""}${e.kcal} kcal` : ""}`;
+    l.appendChild(t);
+    l.appendChild(s);
+    r.appendChild(l);
+
+    const del = button("Verwijder", "", () => {
+      day.logEntries = day.logEntries.filter((x) => x.id !== e.id);
+      saveState();
+      toast("Verwijderd.");
+      render();
+    });
+    del.style.padding = "8px 10px";
+    r.appendChild(del);
+    list.appendChild(r);
+  }
+  if (day.logEntries.length === 0) list.appendChild(p("Nog geen extra's of afwijkingen."));
+
+  c.appendChild(list);
+  c.appendChild(divSpacer(10));
+
+  const form = document.createElement("div");
+  form.className = "grid2";
+
+  const typeSel = document.createElement("select");
+  typeSel.innerHTML = `
+    <option value="food">Voeding (extra / niet genomen)</option>
+    <option value="egym">EGYM (verbruik)</option>
+    <option value="training">Training (extra / niet gedaan)</option>
+  `.trim();
+
+  const titleIn = document.createElement("input");
+  titleIn.placeholder = "Wat heb je gedaan/niet gedaan?";
+
+  const kcalIn = inputInt(null);
+  kcalIn.placeholder = "kcal (optioneel)";
+
+  form.appendChild(field("Type", typeSel));
+  form.appendChild(field("Omschrijving", titleIn));
+  form.appendChild(field("Kcal (+/-)", kcalIn));
+
+  const addBtn = button("Toevoegen", "primary", () => {
+    const title = String(titleIn.value || "").trim();
+    const type = typeSel.value;
+    if (!title) return toast("Vul een omschrijving in.");
+    const kcal = parseIntOrNull(kcalIn.value);
+
+    day.logEntries.push({
+      id: crypto.randomUUID(),
+      type,
+      title,
+      kcal,
+      createdAt: new Date().toISOString()
+    });
+    titleIn.value = "";
+    kcalIn.value = "";
+    saveState();
+    toast("Toegevoegd.");
+    render();
+  });
+  addBtn.style.gridColumn = "1 / -1";
+
+  c.appendChild(form);
+  c.appendChild(divSpacer(10));
+  c.appendChild(addBtn);
+
+  return c;
+}
+
+function inbodyDueCard() {
+  const next = nextInbodyDate();
+  if (!next) return null;
+
+  const dueCard = card("Volgende InBody", []);
+  const deltaDays = daysBetween(isoDateToday(), next);
+  const chip = document.createElement("span");
+  chip.className = "chip " + (deltaDays < 0 ? "bad" : deltaDays <= 10 ? "warn" : "ok");
+  chip.textContent = deltaDays < 0 ? "Te laat" : `Over ${deltaDays} dagen`;
+
+  const title = document.createElement("div");
+  title.className = "card__title";
+  title.textContent = formatDateNL(next);
+  title.appendChild(chip);
+  dueCard.insertBefore(title, dueCard.firstChild);
+
+  const upcoming = upcomingInbodyDates(3);
+  if (upcoming.length) {
+    const s = document.createElement("div");
+    s.className = "small";
+    s.textContent = `Schema (6-wekelijks): ${upcoming.map(formatDateNL).join(" • ")}`;
+    dueCard.appendChild(s);
+  }
+
+  dueCard.appendChild(p("Je kunt bij InBody een foto uploaden en/of de waarden invullen."));
+  return dueCard;
 }
 
 // ----------------------------
@@ -489,7 +867,9 @@ function taskRow(dateKey, kind, task) {
 
   const sub = document.createElement("div");
   sub.className = "row__subtitle";
-  sub.textContent = task.details || "";
+  const kcal = typeof task.caloriesKcal === "number" ? `${task.caloriesKcal} kcal` : "";
+  const bits = [task.details || "", kcal].filter(Boolean);
+  sub.textContent = bits.join(" • ");
 
   left.appendChild(title);
   if (task.details) left.appendChild(sub);
@@ -505,18 +885,12 @@ function taskRow(dateKey, kind, task) {
   input.type = "checkbox";
   input.checked = !!task.done;
   input.addEventListener("change", () => {
-    task.done = input.checked;
-    saveState();
-    render(); // refresh progress
+    setTaskDone(dateKey, kind, task, input.checked);
   });
   check.appendChild(input);
 
   const del = button("Verwijder", "", () => {
-    const day = ensureDay(dateKey);
-    day[kind] = day[kind].filter((t) => t.id !== task.id);
-    saveState();
-    toast("Verwijderd.");
-    render();
+    deleteTaskFromDay(dateKey, kind, task);
   });
   del.style.padding = "8px 10px";
 
@@ -526,6 +900,33 @@ function taskRow(dateKey, kind, task) {
   row.appendChild(left);
   row.appendChild(right);
   return row;
+}
+
+function setTaskDone(dateKey, kind, task, done) {
+  const day = ensureDay(dateKey);
+  const t = resolveTask(day, kind, task);
+  if (!t) return;
+  t.done = !!done;
+  saveState();
+  render();
+}
+
+function deleteTaskFromDay(dateKey, kind, task) {
+  const day = ensureDay(dateKey);
+  const t = resolveTask(day, kind, task);
+  if (!t) return;
+  day[kind] = day[kind].filter((x) => x.id !== t.id);
+  saveState();
+  toast("Verwijderd.");
+  render();
+}
+
+function resolveTask(day, kind, task) {
+  if (!day || !Array.isArray(day[kind])) return null;
+  if (task.templateKey) {
+    return day[kind].find((x) => x.templateKey === task.templateKey) || null;
+  }
+  return day[kind].find((x) => x.id === task.id) || null;
 }
 
 function kpiGrid(items) {
@@ -694,12 +1095,13 @@ function inbodyForm() {
   const form = document.createElement("form");
   form.className = "grid2";
 
-  const fDate = field("Datum", inputDate(state.inbody.nextMeasurementDate || isoDateToday()));
+  const fDate = field("Datum", inputDate(nextInbodyDate() || isoDateToday()));
   const fWeight = field("Gewicht (kg)", inputNumber("", "85.2"));
   const fPbf = field("Vet %", inputNumber("", "20.0"));
   const fSmm = field("SMM (kg)", inputNumber("", "38.3"));
   const fScore = field("InBody score", inputNumber("", "80"));
   const fNotes = field("Notities", textarea(""));
+  const fPhotos = field("Foto(s) (optioneel)", inputPhotos());
 
   form.appendChild(fDate);
   form.appendChild(fWeight);
@@ -707,6 +1109,7 @@ function inbodyForm() {
   form.appendChild(fSmm);
   form.appendChild(fScore);
   form.appendChild(fNotes);
+  form.appendChild(fPhotos);
 
   const actions = document.createElement("div");
   actions.style.display = "flex";
@@ -714,10 +1117,23 @@ function inbodyForm() {
   actions.style.flexWrap = "wrap";
   actions.style.gridColumn = "1 / -1";
 
-  const saveBtn = button("Meting opslaan", "primary", (e) => {
+  const saveBtn = button("Meting opslaan", "primary", async (e) => {
     e?.preventDefault?.();
     const date = fDate.querySelector("input").value;
     if (!date) return toast("Kies een datum.");
+
+    const photoIds = [];
+    const files = fPhotos.querySelector("input").files;
+    if (files && files.length) {
+      for (const file of Array.from(files)) {
+        try {
+          const id = await fileStorePut(file);
+          photoIds.push(id);
+        } catch (err) {
+          // Non-fatal; still save measurement values.
+        }
+      }
+    }
 
     const m = {
       date,
@@ -730,15 +1146,13 @@ function inbodyForm() {
       bodyFatPercent: parseFloatOrNull(fPbf.querySelector("input").value),
       skeletalMuscleMassKg: parseFloatOrNull(fSmm.querySelector("input").value),
       inbodyScore: parseFloatOrNull(fScore.querySelector("input").value),
-      notes: fNotes.querySelector("textarea").value.trim()
+      notes: fNotes.querySelector("textarea").value.trim(),
+      photoIds
     };
 
     state.inbody.measurements = state.inbody.measurements.filter((x) => x.date !== date);
     state.inbody.measurements.push(m);
     state.inbody.measurements.sort((a, b) => (a.date < b.date ? -1 : 1));
-
-    // Keep nextMeasurementDate aligned (optional: bump by 6 weeks).
-    state.inbody.nextMeasurementDate = addDays(date, 42);
 
     saveState();
     toast("Meting opgeslagen.");
@@ -782,6 +1196,23 @@ function inputNumber(value, placeholder) {
   i.step = "0.1";
   i.value = value || "";
   i.placeholder = placeholder || "";
+  return i;
+}
+
+function inputInt(value) {
+  const i = document.createElement("input");
+  i.type = "number";
+  i.inputMode = "numeric";
+  i.step = "1";
+  i.value = value == null ? "" : String(value);
+  return i;
+}
+
+function inputPhotos() {
+  const i = document.createElement("input");
+  i.type = "file";
+  i.accept = "image/*";
+  i.multiple = true;
   return i;
 }
 
@@ -835,18 +1266,243 @@ function csvImportWidget() {
   return wrap;
 }
 
+function weeklyTemplateEditor() {
+  if (!state.templates) state.templates = { weekly: {} };
+  if (!state.templates.weekly) state.templates.weekly = {};
+
+  const wrap = document.createElement("div");
+
+  const weekdaySel = document.createElement("select");
+  const labels = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"];
+  weekdaySel.innerHTML = labels
+    .map((l, i) => `<option value="${i}">${l}</option>`)
+    .join("");
+  if (state.ui.templateWeekday == null) state.ui.templateWeekday = "0";
+  weekdaySel.value = String(state.ui.templateWeekday);
+
+  const kindSel = document.createElement("select");
+  kindSel.innerHTML = `
+    <option value="training">Training</option>
+    <option value="voeding">Voeding</option>
+  `.trim();
+
+  const titleIn = document.createElement("input");
+  titleIn.placeholder = "Titel";
+
+  const detailsIn = document.createElement("input");
+  detailsIn.placeholder = "Details (optioneel)";
+
+  const kcalIn = inputInt(null);
+  kcalIn.placeholder = "kcal (optioneel, voeding)";
+
+  const top = document.createElement("div");
+  top.className = "grid2";
+  top.appendChild(field("Dag", weekdaySel));
+  top.appendChild(field("Type", kindSel));
+  top.appendChild(field("Titel", titleIn));
+  top.appendChild(field("Details", detailsIn));
+  top.appendChild(field("Kcal", kcalIn));
+
+  const addBtn = button("Toevoegen aan weektemplate", "primary", () => {
+    const weekday = weekdaySel.value;
+    const kind = kindSel.value;
+    const title = String(titleIn.value || "").trim();
+    const details = String(detailsIn.value || "").trim();
+    const kcal = parseIntOrNull(kcalIn.value);
+    if (!title) return toast("Vul een titel in.");
+
+    if (!state.templates.weekly[weekday]) state.templates.weekly[weekday] = { training: [], voeding: [] };
+    state.templates.weekly[weekday][kind].push({
+      title,
+      details,
+      caloriesKcal: kind === "voeding" && typeof kcal === "number" ? kcal : null
+    });
+
+    titleIn.value = "";
+    detailsIn.value = "";
+    kcalIn.value = "";
+    saveState();
+    toast("Toegevoegd.");
+    render();
+  });
+
+  wrap.appendChild(top);
+  wrap.appendChild(divSpacer(10));
+  wrap.appendChild(addBtn);
+  wrap.appendChild(divSpacer(10));
+
+  const lists = document.createElement("div");
+  lists.className = "grid2";
+
+  const selectedWeekday = weekdaySel.value;
+  const data = state.templates.weekly[selectedWeekday] || { training: [], voeding: [] };
+
+  lists.appendChild(templateListCard("Training items", selectedWeekday, "training", data.training || []));
+  lists.appendChild(templateListCard("Voeding items", selectedWeekday, "voeding", data.voeding || []));
+
+  wrap.appendChild(lists);
+
+  weekdaySel.addEventListener("change", () => {
+    state.ui.templateWeekday = weekdaySel.value;
+    saveState();
+    render();
+  });
+
+  return wrap;
+}
+
+function templateListCard(title, weekday, kind, items) {
+  const c = document.createElement("div");
+  c.className = "card";
+  const h = document.createElement("div");
+  h.className = "card__title";
+  h.textContent = title;
+  c.appendChild(h);
+
+  if (!items.length) {
+    c.appendChild(p("Geen items."));
+    return c;
+  }
+
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i];
+    const r = document.createElement("div");
+    r.className = "row";
+    const l = document.createElement("div");
+    l.className = "row__left";
+    const t = document.createElement("div");
+    t.className = "row__title";
+    t.textContent = it.title || "(zonder titel)";
+    const s = document.createElement("div");
+    s.className = "row__subtitle";
+    const kcal = typeof it.caloriesKcal === "number" ? `${it.caloriesKcal} kcal` : "";
+    s.textContent = [it.details || "", kcal].filter(Boolean).join(" • ");
+    l.appendChild(t);
+    if (s.textContent) l.appendChild(s);
+    r.appendChild(l);
+
+    const del = button("Verwijder", "", () => {
+      const w = state.templates.weekly[String(weekday)] || { training: [], voeding: [] };
+      w[kind] = (w[kind] || []).filter((_, idx) => idx !== i);
+      state.templates.weekly[String(weekday)] = w;
+      saveState();
+      toast("Verwijderd.");
+      render();
+    });
+    del.style.padding = "8px 10px";
+    r.appendChild(del);
+    c.appendChild(r);
+  }
+
+  return c;
+}
+
+function inbodyMeasurementCard(meas) {
+  const c = document.createElement("div");
+  c.className = "card";
+
+  const title = document.createElement("div");
+  title.className = "card__title";
+  title.textContent = formatDateNL(meas.date);
+
+  const del = button("Verwijder", "danger", async () => {
+    if (!confirm(`Meting verwijderen (${formatDateNL(meas.date)})?`)) return;
+    // Best-effort cleanup of stored photos
+    if (Array.isArray(meas.photoIds)) {
+      for (const id of meas.photoIds) {
+        try { await fileStoreDelete(id); } catch {}
+      }
+    }
+    state.inbody.measurements = state.inbody.measurements.filter((m) => m.date !== meas.date);
+    saveState();
+    toast("Meting verwijderd.");
+    render();
+  });
+  del.style.padding = "8px 10px";
+  title.appendChild(del);
+  c.appendChild(title);
+
+  const items = [];
+  if (typeof meas.weightKg === "number") items.push({ label: "Gewicht", value: fmt(meas.weightKg, 1) + " kg" });
+  if (typeof meas.bodyFatPercent === "number") items.push({ label: "Vet %", value: fmt(meas.bodyFatPercent, 1) + "%" });
+  if (typeof meas.skeletalMuscleMassKg === "number") items.push({ label: "SMM", value: fmt(meas.skeletalMuscleMassKg, 1) + " kg" });
+  if (typeof meas.inbodyScore === "number") items.push({ label: "Score", value: String(meas.inbodyScore) });
+  if (items.length) c.appendChild(kpiGrid(items.slice(0, 4)));
+
+  if (meas.notes) {
+    const n = document.createElement("div");
+    n.className = "small";
+    n.style.marginTop = "10px";
+    n.textContent = `Notities: ${meas.notes}`;
+    c.appendChild(n);
+  }
+
+  const thumbs = document.createElement("div");
+  thumbs.className = "thumbs";
+  const ids = Array.isArray(meas.photoIds) ? meas.photoIds : [];
+  for (const id of ids) {
+    const img = document.createElement("img");
+    img.className = "thumb";
+    img.alt = `InBody foto ${formatDateNL(meas.date)}`;
+    img.loading = "lazy";
+    img.addEventListener("click", async () => {
+      const blob = await fileStoreGet(id).catch(() => null);
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    });
+    // async load
+    fileStoreGet(id).then((blob) => {
+      if (!blob) return;
+      img.src = URL.createObjectURL(blob);
+    }).catch(() => {});
+    thumbs.appendChild(img);
+  }
+  if (ids.length) {
+    c.appendChild(divSpacer(10));
+    c.appendChild(thumbs);
+  }
+
+  c.appendChild(divSpacer(10));
+  const addPhotos = inputPhotos();
+  addPhotos.addEventListener("change", async () => {
+    const files = addPhotos.files;
+    if (!files || !files.length) return;
+    if (!Array.isArray(meas.photoIds)) meas.photoIds = [];
+    for (const f of Array.from(files)) {
+      try {
+        const id = await fileStorePut(f);
+        meas.photoIds.push(id);
+      } catch {}
+    }
+    saveState();
+    toast("Foto(s) toegevoegd.");
+    render();
+  });
+  c.appendChild(field("Foto(s) toevoegen", addPhotos));
+
+  return c;
+}
+
 function openAddTaskSheet(dateKey, kind) {
   const title = kind === "training" ? "Training item" : "Voeding item";
 
   const t = prompt(`${title} titel?`);
   if (!t) return;
   const d = prompt("Details (optioneel)?") || "";
+  let kcal = null;
+  if (kind === "voeding") {
+    const k = prompt("Calorieen (kcal) (optioneel)?") || "";
+    kcal = parseIntOrNull(k);
+  }
 
   const day = ensureDay(dateKey);
   day[kind].push({
     id: crypto.randomUUID(),
     title: t.trim(),
     details: d.trim(),
+    caloriesKcal: typeof kcal === "number" ? kcal : null,
     done: false,
     createdAt: new Date().toISOString()
   });
@@ -889,6 +1545,7 @@ function importCsvToPlan(csvText, kind) {
   const idxDate = findHeaderIndex(header, ["datum", "date"]);
   const idxTitle = findHeaderIndex(header, ["titel", "title", "item", "naam", "exercise", "oefening"]);
   const idxDetails = findHeaderIndex(header, ["details", "detail", "notitie", "notes", "omschrijving", "beschrijving"]);
+  const idxKcal = findHeaderIndex(header, ["kcal", "cal", "calories", "calorieen", "calorien"]);
 
   if (idxDate === -1 || idxTitle === -1) {
     toast("CSV mist kolommen 'datum' en/of 'titel'.");
@@ -902,6 +1559,7 @@ function importCsvToPlan(csvText, kind) {
     const dateRaw = (r[idxDate] || "").trim();
     const titleRaw = (r[idxTitle] || "").trim();
     const detailsRaw = idxDetails === -1 ? "" : (r[idxDetails] || "").trim();
+    const kcalRaw = idxKcal === -1 ? "" : (r[idxKcal] || "").trim();
     if (!dateRaw || !titleRaw) continue;
 
     const dateKey = coerceDate(dateRaw);
@@ -912,6 +1570,7 @@ function importCsvToPlan(csvText, kind) {
       id: crypto.randomUUID(),
       title: titleRaw,
       details: detailsRaw,
+      caloriesKcal: kind === "voeding" ? parseIntOrNull(kcalRaw) : null,
       done: false,
       createdAt: new Date().toISOString(),
       importedFrom: "csv"
@@ -1010,14 +1669,65 @@ function coerceDate(s) {
 // State helpers
 // ----------------------------
 
+function getDayStored(dateKey) {
+  return state.plans.byDate[dateKey] || null;
+}
+
+function getDayView(dateKey) {
+  const stored = getDayStored(dateKey);
+  if (stored) return stored;
+  return seededDayFromTemplate(dateKey);
+}
+
 function ensureDay(dateKey) {
-  if (!state.plans.byDate[dateKey]) {
-    state.plans.byDate[dateKey] = { training: [], voeding: [] };
-  } else {
-    if (!Array.isArray(state.plans.byDate[dateKey].training)) state.plans.byDate[dateKey].training = [];
-    if (!Array.isArray(state.plans.byDate[dateKey].voeding)) state.plans.byDate[dateKey].voeding = [];
+  let day = state.plans.byDate[dateKey];
+  if (!day) {
+    day = seededDayFromTemplate(dateKey, { persist: true });
+    state.plans.byDate[dateKey] = day;
   }
-  return state.plans.byDate[dateKey];
+  // Backwards compat for v1 days.
+  if (!Array.isArray(day.training)) day.training = [];
+  if (!Array.isArray(day.voeding)) day.voeding = [];
+  if (!Array.isArray(day.logEntries)) day.logEntries = [];
+  if (!("manualCaloriesInKcal" in day)) day.manualCaloriesInKcal = null;
+  if (!("manualCaloriesOutKcal" in day)) day.manualCaloriesOutKcal = null;
+  return day;
+}
+
+function seededDayFromTemplate(dateKey, opts = {}) {
+  const weekday = weekdayMondayIndex(dateKey); // 0..6
+  const tpl = state.templates?.weekly?.[String(weekday)] || { training: [], voeding: [] };
+  const now = new Date().toISOString();
+  const persist = !!opts.persist;
+
+  const mkTask = (kind, t, idx) => {
+    const templateKey = `${weekday}:${kind}:${idx}`;
+    return {
+      id: persist ? crypto.randomUUID() : `tmp_${dateKey}_${templateKey}`,
+      title: t.title || "",
+      details: t.details || "",
+      caloriesKcal: typeof t.caloriesKcal === "number" ? t.caloriesKcal : null,
+      done: false,
+      createdAt: now,
+      templateKey,
+      fromTemplate: true,
+      __temp: !persist
+    };
+  };
+
+  const training = (tpl.training || []).map((t, i) => mkTask("training", t, i));
+  const voeding = (tpl.voeding || []).map((t, i) => mkTask("voeding", t, i));
+
+  return {
+    training,
+    voeding,
+    logEntries: [],
+    manualCaloriesInKcal: null,
+    manualCaloriesOutKcal: null,
+    createdAt: now,
+    seededFromTemplate: true,
+    __temp: !persist
+  };
 }
 
 function previousMeasurement(dateKey) {
@@ -1032,9 +1742,35 @@ function normalizeState(obj) {
   const out = structuredClone(SEED_STATE);
   if (s.profile) out.profile = { ...out.profile, ...s.profile };
   if (s.ui) out.ui = { ...out.ui, ...s.ui };
+  if (s.templates) out.templates = { ...out.templates, ...s.templates };
   if (s.plans?.byDate) out.plans.byDate = s.plans.byDate;
   if (s.inbody) out.inbody = { ...out.inbody, ...s.inbody };
   out.version = APP_VERSION;
+
+  // Normalize day objects.
+  for (const [dateKey, day] of Object.entries(out.plans.byDate || {})) {
+    if (!day || typeof day !== "object") continue;
+    if (!Array.isArray(day.training)) day.training = [];
+    if (!Array.isArray(day.voeding)) day.voeding = [];
+    if (!Array.isArray(day.logEntries)) day.logEntries = [];
+    if (!("manualCaloriesInKcal" in day)) day.manualCaloriesInKcal = null;
+    if (!("manualCaloriesOutKcal" in day)) day.manualCaloriesOutKcal = null;
+    // Ensure tasks have ids
+    for (const k of ["training", "voeding"]) {
+      for (const t of day[k]) {
+        if (!t.id) t.id = crypto.randomUUID();
+        if (!("done" in t)) t.done = false;
+      }
+    }
+    // Keep month view consistent
+    if (!out.ui.calendarMonth) out.ui.calendarMonth = dateKey.slice(0, 7);
+  }
+
+  // InBody defaults
+  if (!out.inbody.intervalDays) out.inbody.intervalDays = 42;
+  if (!out.inbody.scheduleStartDate) out.inbody.scheduleStartDate = "2026-04-01";
+  if (!Array.isArray(out.inbody.measurements)) out.inbody.measurements = [];
+
   return out;
 }
 
@@ -1096,6 +1832,69 @@ function registerServiceWorker() {
 }
 
 // ----------------------------
+// File Store (IndexedDB) for Photos
+// ----------------------------
+
+const FILE_DB_NAME = "andre_coach_files_v1";
+const FILE_STORE_NAME = "files";
+let _fileDbPromise = null;
+
+function openFileDb() {
+  if (_fileDbPromise) return _fileDbPromise;
+  _fileDbPromise = new Promise((resolve, reject) => {
+    if (!("indexedDB" in window)) return reject(new Error("indexedDB not supported"));
+    const req = indexedDB.open(FILE_DB_NAME, 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(FILE_STORE_NAME)) {
+        db.createObjectStore(FILE_STORE_NAME, { keyPath: "id" });
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error || new Error("Failed to open IndexedDB"));
+  });
+  return _fileDbPromise;
+}
+
+async function fileStorePut(blob) {
+  const db = await openFileDb();
+  const id = crypto.randomUUID();
+  await new Promise((resolve, reject) => {
+    const tx = db.transaction(FILE_STORE_NAME, "readwrite");
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error || new Error("Failed to store file"));
+    tx.objectStore(FILE_STORE_NAME).put({
+      id,
+      blob,
+      type: blob?.type || "",
+      createdAt: new Date().toISOString()
+    });
+  });
+  return id;
+}
+
+async function fileStoreGet(id) {
+  const db = await openFileDb();
+  const rec = await new Promise((resolve, reject) => {
+    const tx = db.transaction(FILE_STORE_NAME, "readonly");
+    const req = tx.objectStore(FILE_STORE_NAME).get(id);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error || new Error("Failed to read file"));
+  });
+  return rec?.blob || null;
+}
+
+async function fileStoreDelete(id) {
+  const db = await openFileDb();
+  await new Promise((resolve, reject) => {
+    const tx = db.transaction(FILE_STORE_NAME, "readwrite");
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error || new Error("Failed to delete file"));
+    tx.objectStore(FILE_STORE_NAME).delete(id);
+  });
+}
+
+// ----------------------------
 // Utilities
 // ----------------------------
 
@@ -1122,6 +1921,11 @@ function delta(a, b) {
 
 function parseFloatOrNull(s) {
   const n = parseFloat(String(s).replace(",", "."));
+  return Number.isFinite(n) ? n : null;
+}
+
+function parseIntOrNull(s) {
+  const n = parseInt(String(s).trim(), 10);
   return Number.isFinite(n) ? n : null;
 }
 
@@ -1155,4 +1959,168 @@ function yearsBetween(birthIso, atIso) {
   const m = a.getMonth() - b.getMonth();
   if (m < 0 || (m === 0 && a.getDate() < b.getDate())) years--;
   return years;
+}
+
+function weekdayMondayIndex(isoDate) {
+  // 0=Monday .. 6=Sunday
+  const [y, m, d] = isoDate.split("-").map((x) => parseInt(x, 10));
+  const dt = new Date(y, m - 1, d);
+  const js = dt.getDay(); // 0=Sun..6=Sat
+  return (js + 6) % 7;
+}
+
+function addMonths(isoDate, deltaMonths) {
+  const [y, m, d] = isoDate.split("-").map((x) => parseInt(x, 10));
+  const dt = new Date(y, m - 1, d);
+  dt.setMonth(dt.getMonth() + Number(deltaMonths || 0));
+  return toIsoLocal(dt);
+}
+
+function toIsoLocal(dateObj) {
+  const y = dateObj.getFullYear();
+  const m = String(dateObj.getMonth() + 1).padStart(2, "0");
+  const d = String(dateObj.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function calendarCells(monthKey /* YYYY-MM */) {
+  const [y, m] = monthKey.split("-").map((x) => parseInt(x, 10));
+  const first = new Date(y, m - 1, 1);
+  const offset = (first.getDay() + 6) % 7; // Monday-based
+  const start = new Date(y, m - 1, 1 - offset);
+  const cells = [];
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    const dateKey = toIsoLocal(d);
+    cells.push({ dateKey, isOut: dateKey.slice(0, 7) !== monthKey });
+  }
+  return cells;
+}
+
+function formatMonthNL(monthKey /* YYYY-MM */) {
+  const [y, m] = monthKey.split("-").map((x) => parseInt(x, 10));
+  const months = [
+    "januari", "februari", "maart", "april", "mei", "juni",
+    "juli", "augustus", "september", "oktober", "november", "december"
+  ];
+  return `${months[m - 1]} ${y}`;
+}
+
+function badgeClass(pct) {
+  if (pct == null) return "warn";
+  if (pct >= 80) return "ok";
+  if (pct >= 40) return "warn";
+  return "bad";
+}
+
+function labelForLogType(type) {
+  if (type === "food") return "Voeding";
+  if (type === "egym") return "EGYM";
+  if (type === "training") return "Training";
+  return "Log";
+}
+
+function sumKcalFromTasks(tasks) {
+  let s = 0;
+  for (const t of tasks || []) {
+    if (typeof t.caloriesKcal === "number") s += t.caloriesKcal;
+  }
+  return s;
+}
+
+function sumKcalFromEntries(entries, type) {
+  let s = 0;
+  for (const e of entries || []) {
+    if (e?.type !== type) continue;
+    if (typeof e.kcal === "number") s += e.kcal;
+  }
+  return s;
+}
+
+function calcDayStats(dateKey, dayView) {
+  const tasks = [...(dayView.training || []), ...(dayView.voeding || [])];
+  const total = tasks.length;
+  const done = tasks.filter((t) => !!t.done).length;
+  const completionPct = total ? Math.round((done / total) * 100) : null;
+
+  const targetKcal = typeof state.profile.calorieTargetKcal === "number" ? state.profile.calorieTargetKcal : null;
+
+  const plannedIn = sumKcalFromTasks(dayView.voeding);
+  const adjIn = sumKcalFromEntries(dayView.logEntries, "food");
+  const adjOut = sumKcalFromEntries(dayView.logEntries, "egym");
+
+  const manualIn = dayView.manualCaloriesInKcal;
+  const manualOut = dayView.manualCaloriesOutKcal;
+
+  const actualIn =
+    typeof manualIn === "number"
+      ? manualIn
+      : (plannedIn || adjIn) ? (plannedIn + adjIn) : null;
+
+  const actualOut =
+    typeof manualOut === "number"
+      ? manualOut
+      : adjOut ? adjOut : null;
+
+  const netKcal =
+    actualIn == null && actualOut == null
+      ? null
+      : (actualIn || 0) - (actualOut || 0);
+
+  let calorieScore = null;
+  if (targetKcal != null && actualIn != null) {
+    const dev = Math.abs(actualIn - targetKcal) / Math.max(1, targetKcal);
+    calorieScore = clampInt(Math.round(100 - dev * 100), 0, 100);
+  }
+
+  let scorePct = completionPct;
+  if (completionPct != null && calorieScore != null) {
+    scorePct = clampInt(Math.round(completionPct * 0.7 + calorieScore * 0.3), 0, 100);
+  }
+
+  return {
+    completionPct,
+    targetKcal,
+    plannedInKcal: plannedIn || null,
+    actualInKcal: actualIn,
+    actualOutKcal: actualOut,
+    netKcal: netKcal == null ? null : Math.round(netKcal),
+    calorieScore,
+    scorePct
+  };
+}
+
+function clampInt(n, lo, hi) {
+  const x = Number(n);
+  if (!Number.isFinite(x)) return lo;
+  if (x < lo) return lo;
+  if (x > hi) return hi;
+  return x;
+}
+
+function nextInbodyDate() {
+  const interval = state.inbody?.intervalDays || 42;
+  const start = state.inbody?.scheduleStartDate || null;
+  const ms = (state.inbody?.measurements || []).slice().sort((a, b) => (a.date < b.date ? 1 : -1));
+  const latest = ms[0]?.date || null;
+
+  if (!start && !latest) return null;
+  if (!latest) return start;
+
+  let next = addDays(latest, interval);
+  if (start && next < start) next = start;
+  return next;
+}
+
+function upcomingInbodyDates(count) {
+  const interval = state.inbody?.intervalDays || 42;
+  let d = nextInbodyDate();
+  const out = [];
+  for (let i = 0; i < (count || 0); i++) {
+    if (!d) break;
+    out.push(d);
+    d = addDays(d, interval);
+  }
+  return out;
 }
