@@ -24,10 +24,10 @@ const SEED_STATE = {
       "0": {
         training: [],
         voeding: [
-          { title: "Ontbijt", details: "2 krentenbrood + boter + kaas • Eiwit: 15g", caloriesKcal: 400 },
-          { title: "Lunch", details: "8 volkoren boterhammen (4 pindakaas, 2 kaas, 2 kip) • Eiwit: 35g", caloriesKcal: 650 },
-          { title: "Tussendoortje", details: "50g noten + appel • Eiwit: 10g", caloriesKcal: 320 },
-          { title: "Avondeten", details: "200g vlees/vis + groente + 3 aardappels • Eiwit: 50g", caloriesKcal: 600 }
+          { title: "Ontbijt", details: "2 krentenbrood + boter + kaas", proteinG: 15, caloriesKcal: 400 },
+          { title: "Lunch", details: "8 volkoren boterhammen (4 pindakaas, 2 kaas, 2 kip)", proteinG: 35, caloriesKcal: 650 },
+          { title: "Tussendoortje", details: "50g noten + appel", proteinG: 10, caloriesKcal: 320 },
+          { title: "Avondeten", details: "200g vlees/vis + groente + 3 aardappels", proteinG: 50, caloriesKcal: 600 }
         ]
       },
       "1": {
@@ -44,29 +44,29 @@ const SEED_STATE = {
           { title: "Roeien", details: "15 min", caloriesKcal: null }
         ],
         voeding: [
-          { title: "Ontbijt", details: "2 krentenbrood + boter + kaas • Eiwit: 15g", caloriesKcal: 400 },
-          { title: "Lunch", details: "8 volkoren boterhammen (4 pindakaas, 2 kaas, 2 kip) • Eiwit: 35g", caloriesKcal: 650 },
-          { title: "Tussendoortje", details: "50g noten + appel • Eiwit: 10g", caloriesKcal: 320 },
-          { title: "Avondeten", details: "200g vlees/vis + groente + 3 aardappels • Eiwit: 50g", caloriesKcal: 600 }
+          { title: "Ontbijt", details: "2 krentenbrood + boter + kaas", proteinG: 15, caloriesKcal: 400 },
+          { title: "Lunch", details: "8 volkoren boterhammen (4 pindakaas, 2 kaas, 2 kip)", proteinG: 35, caloriesKcal: 650 },
+          { title: "Tussendoortje", details: "50g noten + appel", proteinG: 10, caloriesKcal: 320 },
+          { title: "Avondeten", details: "200g vlees/vis + groente + 3 aardappels", proteinG: 50, caloriesKcal: 600 }
         ]
       },
       "2": {
         training: [],
         voeding: [
-          { title: "Ontbijt", details: "2 krentenbrood + boter + kaas • Eiwit: 15g", caloriesKcal: 400 },
-          { title: "Lunch", details: "8 volkoren boterhammen (4 pindakaas, 2 kaas, 2 kip) • Eiwit: 35g", caloriesKcal: 650 },
-          { title: "Tussendoortje", details: "50g noten + appel • Eiwit: 10g", caloriesKcal: 320 },
-          { title: "Avondeten", details: "200g vlees/vis + groente + 3 aardappels • Eiwit: 50g", caloriesKcal: 600 }
+          { title: "Ontbijt", details: "2 krentenbrood + boter + kaas", proteinG: 15, caloriesKcal: 400 },
+          { title: "Lunch", details: "8 volkoren boterhammen (4 pindakaas, 2 kaas, 2 kip)", proteinG: 35, caloriesKcal: 650 },
+          { title: "Tussendoortje", details: "50g noten + appel", proteinG: 10, caloriesKcal: 320 },
+          { title: "Avondeten", details: "200g vlees/vis + groente + 3 aardappels", proteinG: 50, caloriesKcal: 600 }
         ]
       },
       "3": {
         // Donderdag
         training: [{ title: "Roeien", details: "25 min rustig (alleen cardio)", caloriesKcal: null }],
         voeding: [
-          { title: "Ontbijt", details: "2 krentenbrood + boter + kaas • Eiwit: 15g", caloriesKcal: 400 },
-          { title: "Lunch", details: "8 volkoren boterhammen (4 pindakaas, 2 kaas, 2 kip) • Eiwit: 35g", caloriesKcal: 650 },
-          { title: "Tussendoortje", details: "50g noten + appel • Eiwit: 10g", caloriesKcal: 320 },
-          { title: "Avondeten", details: "200g vlees/vis + groente + 3 aardappels • Eiwit: 50g", caloriesKcal: 600 }
+          { title: "Ontbijt", details: "2 krentenbrood + boter + kaas", proteinG: 15, caloriesKcal: 400 },
+          { title: "Lunch", details: "8 volkoren boterhammen (4 pindakaas, 2 kaas, 2 kip)", proteinG: 35, caloriesKcal: 650 },
+          { title: "Tussendoortje", details: "50g noten + appel", proteinG: 10, caloriesKcal: 320 },
+          { title: "Avondeten", details: "200g vlees/vis + groente + 3 aardappels", proteinG: 50, caloriesKcal: 600 }
         ]
       },
       "4": {
@@ -83,19 +83,19 @@ const SEED_STATE = {
           { title: "Roeien", details: "10 min", caloriesKcal: null }
         ],
         voeding: [
-          { title: "Ontbijt", details: "2 krentenbrood + boter + kaas • Eiwit: 15g", caloriesKcal: 400 },
-          { title: "Lunch", details: "8 volkoren boterhammen (4 pindakaas, 2 kaas, 2 kip) • Eiwit: 35g", caloriesKcal: 650 },
-          { title: "Tussendoortje", details: "50g noten + appel • Eiwit: 10g", caloriesKcal: 320 },
-          { title: "Avondeten", details: "200g vlees/vis + groente + 3 aardappels • Eiwit: 50g", caloriesKcal: 600 }
+          { title: "Ontbijt", details: "2 krentenbrood + boter + kaas", proteinG: 15, caloriesKcal: 400 },
+          { title: "Lunch", details: "8 volkoren boterhammen (4 pindakaas, 2 kaas, 2 kip)", proteinG: 35, caloriesKcal: 650 },
+          { title: "Tussendoortje", details: "50g noten + appel", proteinG: 10, caloriesKcal: 320 },
+          { title: "Avondeten", details: "200g vlees/vis + groente + 3 aardappels", proteinG: 50, caloriesKcal: 600 }
         ]
       },
       "5": {
         training: [],
         voeding: [
-          { title: "Ontbijt", details: "2 krentenbrood + boter + kaas • Eiwit: 15g", caloriesKcal: 400 },
-          { title: "Lunch", details: "8 volkoren boterhammen (4 pindakaas, 2 kaas, 2 kip) • Eiwit: 35g", caloriesKcal: 650 },
-          { title: "Tussendoortje", details: "50g noten + appel • Eiwit: 10g", caloriesKcal: 320 },
-          { title: "Avondeten", details: "200g vlees/vis + groente + 3 aardappels • Eiwit: 50g", caloriesKcal: 600 }
+          { title: "Ontbijt", details: "2 krentenbrood + boter + kaas", proteinG: 15, caloriesKcal: 400 },
+          { title: "Lunch", details: "8 volkoren boterhammen (4 pindakaas, 2 kaas, 2 kip)", proteinG: 35, caloriesKcal: 650 },
+          { title: "Tussendoortje", details: "50g noten + appel", proteinG: 10, caloriesKcal: 320 },
+          { title: "Avondeten", details: "200g vlees/vis + groente + 3 aardappels", proteinG: 50, caloriesKcal: 600 }
         ]
       },
       "6": {
@@ -112,10 +112,10 @@ const SEED_STATE = {
           { title: "Roeien", details: "15 min", caloriesKcal: null }
         ],
         voeding: [
-          { title: "Ontbijt", details: "2 krentenbrood + boter + kaas • Eiwit: 15g", caloriesKcal: 400 },
-          { title: "Lunch", details: "8 volkoren boterhammen (4 pindakaas, 2 kaas, 2 kip) • Eiwit: 35g", caloriesKcal: 650 },
-          { title: "Tussendoortje", details: "50g noten + appel • Eiwit: 10g", caloriesKcal: 320 },
-          { title: "Avondeten", details: "200g vlees/vis + groente + 3 aardappels • Eiwit: 50g", caloriesKcal: 600 }
+          { title: "Ontbijt", details: "2 krentenbrood + boter + kaas", proteinG: 15, caloriesKcal: 400 },
+          { title: "Lunch", details: "8 volkoren boterhammen (4 pindakaas, 2 kaas, 2 kip)", proteinG: 35, caloriesKcal: 650 },
+          { title: "Tussendoortje", details: "50g noten + appel", proteinG: 10, caloriesKcal: 320 },
+          { title: "Avondeten", details: "200g vlees/vis + groente + 3 aardappels", proteinG: 50, caloriesKcal: 600 }
         ]
       }
     }
@@ -245,6 +245,8 @@ function render() {
   setActiveTab(route.name);
 
   const selectedDate = state.ui.selectedDate || isoDateToday();
+  // If user previously created empty days before templates existed, auto-seed them now.
+  autoSeedDayIfEmpty(selectedDate);
 
   els.topbarRight.textContent = "";
   els.content.textContent = "";
@@ -697,11 +699,17 @@ function dayScoreCard(dateKey) {
   c.appendChild(kpiGrid([
     { label: "Schema gehaald", value: stats.completionPct === null ? "—" : `${stats.completionPct}%` },
     { label: "Calorie target", value: stats.targetKcal == null ? "—" : `${stats.targetKcal} kcal` },
-    { label: "Inname", value: stats.actualInKcal == null ? "—" : `${stats.actualInKcal} kcal` },
-    { label: "EGYM verbruik", value: stats.actualOutKcal == null ? "—" : `${stats.actualOutKcal} kcal` }
+    { label: "Plan inname", value: stats.plannedInKcal == null ? "—" : `${stats.plannedInKcal} kcal` },
+    { label: "Plan eiwit", value: stats.plannedProteinG == null ? "—" : `${stats.plannedProteinG} g` }
   ]));
 
   c.appendChild(divSpacer(10));
+
+  const actualLine = document.createElement("div");
+  actualLine.className = "small";
+  actualLine.textContent = `Actueel: inname ${stats.actualInKcal == null ? "—" : stats.actualInKcal + " kcal"} • EGYM verbruik ${stats.actualOutKcal == null ? "—" : stats.actualOutKcal + " kcal"}`;
+  c.appendChild(actualLine);
+  c.appendChild(divSpacer(8));
 
   const net = document.createElement("div");
   net.className = "small";
@@ -967,7 +975,8 @@ function taskRow(dateKey, kind, task) {
   const sub = document.createElement("div");
   sub.className = "row__subtitle";
   const kcal = typeof task.caloriesKcal === "number" ? `${task.caloriesKcal} kcal` : "";
-  const bits = [task.details || "", kcal].filter(Boolean);
+  const prot = typeof task.proteinG === "number" ? `${task.proteinG}g eiwit` : "";
+  const bits = [task.details || "", prot, kcal].filter(Boolean);
   sub.textContent = bits.join(" • ");
 
   left.appendChild(title);
@@ -1602,9 +1611,12 @@ function openAddTaskSheet(dateKey, kind) {
   if (!t) return;
   const d = prompt("Details (optioneel)?") || "";
   let kcal = null;
+  let protein = null;
   if (kind === "voeding") {
     const k = prompt("Calorieen (kcal) (optioneel)?") || "";
     kcal = parseIntOrNull(k);
+    const p = prompt("Eiwit (g) (optioneel)?") || "";
+    protein = parseIntOrNull(p);
   }
 
   const day = ensureDay(dateKey);
@@ -1613,6 +1625,7 @@ function openAddTaskSheet(dateKey, kind) {
     title: t.trim(),
     details: d.trim(),
     caloriesKcal: typeof kcal === "number" ? kcal : null,
+    proteinG: typeof protein === "number" ? protein : null,
     done: false,
     createdAt: new Date().toISOString()
   });
@@ -1656,6 +1669,7 @@ function importCsvToPlan(csvText, kind) {
   const idxTitle = findHeaderIndex(header, ["titel", "title", "item", "naam", "exercise", "oefening"]);
   const idxDetails = findHeaderIndex(header, ["details", "detail", "notitie", "notes", "omschrijving", "beschrijving"]);
   const idxKcal = findHeaderIndex(header, ["kcal", "cal", "calories", "calorieen", "calorien"]);
+  const idxProtein = findHeaderIndex(header, ["eiwit", "protein", "proteing", "eiwitg"]);
 
   if (idxDate === -1 || idxTitle === -1) {
     toast("CSV mist kolommen 'datum' en/of 'titel'.");
@@ -1670,6 +1684,7 @@ function importCsvToPlan(csvText, kind) {
     const titleRaw = (r[idxTitle] || "").trim();
     const detailsRaw = idxDetails === -1 ? "" : (r[idxDetails] || "").trim();
     const kcalRaw = idxKcal === -1 ? "" : (r[idxKcal] || "").trim();
+    const proteinRaw = idxProtein === -1 ? "" : (r[idxProtein] || "").trim();
     if (!dateRaw || !titleRaw) continue;
 
     const dateKey = coerceDate(dateRaw);
@@ -1681,6 +1696,7 @@ function importCsvToPlan(csvText, kind) {
       title: titleRaw,
       details: detailsRaw,
       caloriesKcal: kind === "voeding" ? parseIntOrNull(kcalRaw) : null,
+      proteinG: kind === "voeding" ? parseIntOrNull(proteinRaw) : null,
       done: false,
       createdAt: new Date().toISOString(),
       importedFrom: "csv"
@@ -1789,6 +1805,26 @@ function getDayView(dateKey) {
   return seededDayFromTemplate(dateKey);
 }
 
+function autoSeedDayIfEmpty(dateKey) {
+  const stored = getDayStored(dateKey);
+  if (!stored || typeof stored !== "object") return false;
+  if (stored.seededFromTemplate) return false;
+
+  const tLen = Array.isArray(stored.training) ? stored.training.length : 0;
+  const vLen = Array.isArray(stored.voeding) ? stored.voeding.length : 0;
+  const logLen = Array.isArray(stored.logEntries) ? stored.logEntries.length : 0;
+  const hasManual = typeof stored.manualCaloriesInKcal === "number" || typeof stored.manualCaloriesOutKcal === "number";
+
+  // Only auto-seed truly empty days (so we don't overwrite user edits).
+  if (tLen === 0 && vLen === 0 && logLen === 0 && !hasManual) {
+    const seeded = seededDayFromTemplate(dateKey, { persist: true });
+    state.plans.byDate[dateKey] = seeded;
+    saveState();
+    return true;
+  }
+  return false;
+}
+
 function ensureDay(dateKey) {
   let day = state.plans.byDate[dateKey];
   if (!day) {
@@ -1817,6 +1853,7 @@ function seededDayFromTemplate(dateKey, opts = {}) {
       title: t.title || "",
       details: t.details || "",
       caloriesKcal: typeof t.caloriesKcal === "number" ? t.caloriesKcal : null,
+      proteinG: typeof t.proteinG === "number" ? t.proteinG : null,
       done: false,
       createdAt: now,
       templateKey,
@@ -1881,6 +1918,8 @@ function normalizeState(obj) {
       for (const t of day[k]) {
         if (!t.id) t.id = crypto.randomUUID();
         if (!("done" in t)) t.done = false;
+        if (!("proteinG" in t)) t.proteinG = null;
+        if (!("caloriesKcal" in t)) t.caloriesKcal = null;
       }
     }
     // Keep month view consistent
@@ -2198,6 +2237,14 @@ function sumKcalFromTasks(tasks) {
   return s;
 }
 
+function sumProteinFromTasks(tasks) {
+  let s = 0;
+  for (const t of tasks || []) {
+    if (typeof t.proteinG === "number") s += t.proteinG;
+  }
+  return s;
+}
+
 function sumKcalFromEntries(entries, type) {
   let s = 0;
   for (const e of entries || []) {
@@ -2216,6 +2263,7 @@ function calcDayStats(dateKey, dayView) {
   const targetKcal = typeof state.profile.calorieTargetKcal === "number" ? state.profile.calorieTargetKcal : null;
 
   const plannedIn = sumKcalFromTasks(dayView.voeding);
+  const plannedProtein = sumProteinFromTasks(dayView.voeding);
   const adjIn = sumKcalFromEntries(dayView.logEntries, "food");
   const adjOut = sumKcalFromEntries(dayView.logEntries, "egym");
 
@@ -2252,6 +2300,7 @@ function calcDayStats(dateKey, dayView) {
     completionPct,
     targetKcal,
     plannedInKcal: plannedIn || null,
+    plannedProteinG: plannedProtein || null,
     actualInKcal: actualIn,
     actualOutKcal: actualOut,
     netKcal: netKcal == null ? null : Math.round(netKcal),
