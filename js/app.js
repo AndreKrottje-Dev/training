@@ -10,8 +10,8 @@ const SEED_STATE = {
     sex: "Man",
     birthdate: "1968-07-12",
     heightCm: 183,
-    // Default target based on your InBody printout (recommended calories).
-    calorieTargetKcal: 2220
+    // Default target based on your provided voedingsschema (TOTAL DAG = 1970 kcal).
+    calorieTargetKcal: 1970
   },
   ui: {
     selectedDate: isoDateToday(),
@@ -19,7 +19,72 @@ const SEED_STATE = {
   },
   templates: {
     // weekly[0..6] (0=Monday) -> { training: TemplateTask[], voeding: TemplateTask[] }
-    weekly: {}
+    weekly: {
+      // 0 = Monday
+      "0": {
+        training: [],
+        voeding: [
+          { title: "Ontbijt", details: "2 krentenbrood + boter + kaas • Eiwit: 15g", caloriesKcal: 400 },
+          { title: "Lunch", details: "8 volkoren boterhammen (4 pindakaas, 2 kaas, 2 kip) • Eiwit: 35g", caloriesKcal: 650 },
+          { title: "Tussendoortje", details: "50g noten + appel • Eiwit: 10g", caloriesKcal: 320 },
+          { title: "Avondeten", details: "200g vlees/vis + groente + 3 aardappels • Eiwit: 50g", caloriesKcal: 600 }
+        ]
+      },
+      "1": {
+        training: [{ title: "Training", details: "eGym (2x12 negatief) + 15 min roeien", caloriesKcal: null }],
+        voeding: [
+          { title: "Ontbijt", details: "2 krentenbrood + boter + kaas • Eiwit: 15g", caloriesKcal: 400 },
+          { title: "Lunch", details: "8 volkoren boterhammen (4 pindakaas, 2 kaas, 2 kip) • Eiwit: 35g", caloriesKcal: 650 },
+          { title: "Tussendoortje", details: "50g noten + appel • Eiwit: 10g", caloriesKcal: 320 },
+          { title: "Avondeten", details: "200g vlees/vis + groente + 3 aardappels • Eiwit: 50g", caloriesKcal: 600 }
+        ]
+      },
+      "2": {
+        training: [],
+        voeding: [
+          { title: "Ontbijt", details: "2 krentenbrood + boter + kaas • Eiwit: 15g", caloriesKcal: 400 },
+          { title: "Lunch", details: "8 volkoren boterhammen (4 pindakaas, 2 kaas, 2 kip) • Eiwit: 35g", caloriesKcal: 650 },
+          { title: "Tussendoortje", details: "50g noten + appel • Eiwit: 10g", caloriesKcal: 320 },
+          { title: "Avondeten", details: "200g vlees/vis + groente + 3 aardappels • Eiwit: 50g", caloriesKcal: 600 }
+        ]
+      },
+      "3": {
+        training: [{ title: "Training", details: "25 min rustig roeien (alleen cardio)", caloriesKcal: null }],
+        voeding: [
+          { title: "Ontbijt", details: "2 krentenbrood + boter + kaas • Eiwit: 15g", caloriesKcal: 400 },
+          { title: "Lunch", details: "8 volkoren boterhammen (4 pindakaas, 2 kaas, 2 kip) • Eiwit: 35g", caloriesKcal: 650 },
+          { title: "Tussendoortje", details: "50g noten + appel • Eiwit: 10g", caloriesKcal: 320 },
+          { title: "Avondeten", details: "200g vlees/vis + groente + 3 aardappels • Eiwit: 50g", caloriesKcal: 600 }
+        ]
+      },
+      "4": {
+        training: [{ title: "Training", details: "eGym (2x12 negatief) -> 10 min roeien", caloriesKcal: null }],
+        voeding: [
+          { title: "Ontbijt", details: "2 krentenbrood + boter + kaas • Eiwit: 15g", caloriesKcal: 400 },
+          { title: "Lunch", details: "8 volkoren boterhammen (4 pindakaas, 2 kaas, 2 kip) • Eiwit: 35g", caloriesKcal: 650 },
+          { title: "Tussendoortje", details: "50g noten + appel • Eiwit: 10g", caloriesKcal: 320 },
+          { title: "Avondeten", details: "200g vlees/vis + groente + 3 aardappels • Eiwit: 50g", caloriesKcal: 600 }
+        ]
+      },
+      "5": {
+        training: [],
+        voeding: [
+          { title: "Ontbijt", details: "2 krentenbrood + boter + kaas • Eiwit: 15g", caloriesKcal: 400 },
+          { title: "Lunch", details: "8 volkoren boterhammen (4 pindakaas, 2 kaas, 2 kip) • Eiwit: 35g", caloriesKcal: 650 },
+          { title: "Tussendoortje", details: "50g noten + appel • Eiwit: 10g", caloriesKcal: 320 },
+          { title: "Avondeten", details: "200g vlees/vis + groente + 3 aardappels • Eiwit: 50g", caloriesKcal: 600 }
+        ]
+      },
+      "6": {
+        training: [{ title: "Training", details: "eGym (2x12 negatief) + 15 min roeien", caloriesKcal: null }],
+        voeding: [
+          { title: "Ontbijt", details: "2 krentenbrood + boter + kaas • Eiwit: 15g", caloriesKcal: 400 },
+          { title: "Lunch", details: "8 volkoren boterhammen (4 pindakaas, 2 kaas, 2 kip) • Eiwit: 35g", caloriesKcal: 650 },
+          { title: "Tussendoortje", details: "50g noten + appel • Eiwit: 10g", caloriesKcal: 320 },
+          { title: "Avondeten", details: "200g vlees/vis + groente + 3 aardappels • Eiwit: 50g", caloriesKcal: 600 }
+        ]
+      }
+    }
   },
   plans: {
     // dateKey -> DayPlan
@@ -1228,7 +1293,7 @@ function csvImportWidget() {
 
   const info = document.createElement("div");
   info.className = "small";
-  info.textContent = "CSV verwacht kolommen: datum, titel, details. Extra kolommen worden genegeerd.";
+  info.textContent = "CSV verwacht kolommen: datum, titel, details, kcal (optioneel). Extra kolommen worden genegeerd.";
   wrap.appendChild(info);
   wrap.appendChild(divSpacer(8));
 
@@ -1742,7 +1807,16 @@ function normalizeState(obj) {
   const out = structuredClone(SEED_STATE);
   if (s.profile) out.profile = { ...out.profile, ...s.profile };
   if (s.ui) out.ui = { ...out.ui, ...s.ui };
-  if (s.templates) out.templates = { ...out.templates, ...s.templates };
+  if (s.templates) {
+    // Don't overwrite the default weektemplate with an empty object.
+    if (s.templates.weekly && typeof s.templates.weekly === "object") {
+      out.templates.weekly = isWeeklyTemplateEmpty(s.templates.weekly) ? out.templates.weekly : s.templates.weekly;
+    }
+    for (const [k, v] of Object.entries(s.templates)) {
+      if (k === "weekly") continue;
+      out.templates[k] = v;
+    }
+  }
   if (s.plans?.byDate) out.plans.byDate = s.plans.byDate;
   if (s.inbody) out.inbody = { ...out.inbody, ...s.inbody };
   out.version = APP_VERSION;
@@ -1772,6 +1846,22 @@ function normalizeState(obj) {
   if (!Array.isArray(out.inbody.measurements)) out.inbody.measurements = [];
 
   return out;
+}
+
+function isWeeklyTemplateEmpty(weekly) {
+  try {
+    const keys = Object.keys(weekly || {});
+    if (keys.length === 0) return true;
+    for (const k of keys) {
+      const d = weekly[k];
+      const t = Array.isArray(d?.training) ? d.training.length : 0;
+      const v = Array.isArray(d?.voeding) ? d.voeding.length : 0;
+      if (t + v > 0) return false;
+    }
+    return true;
+  } catch {
+    return true;
+  }
 }
 
 function loadState() {
