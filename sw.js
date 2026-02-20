@@ -3,14 +3,14 @@ const CACHE_NAME = "andre-coach-v1";
 
 // Keep this list short and stable; dynamic data is stored in localStorage.
 const PRECACHE_URLS = [
-  "/",
-  "/index.html",
-  "/css/styles.css",
-  "/js/app.js",
-  "/manifest.webmanifest",
-  "/assets/icon-192.png",
-  "/assets/icon-512.png",
-  "/assets/apple-touch-icon.png"
+  "./",
+  "./index.html",
+  "./css/styles.css",
+  "./js/app.js",
+  "./manifest.webmanifest",
+  "./assets/icon-192.png",
+  "./assets/icon-512.png",
+  "./assets/apple-touch-icon.png"
 ];
 
 self.addEventListener("install", (event) => {
@@ -45,7 +45,7 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       (async () => {
         const cache = await caches.open(CACHE_NAME);
-        const cached = await cache.match("/index.html");
+        const cached = await cache.match("./index.html");
         if (cached) return cached;
         return fetch(req);
       })()
@@ -70,4 +70,3 @@ self.addEventListener("fetch", (event) => {
     })()
   );
 });
-

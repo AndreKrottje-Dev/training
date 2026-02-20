@@ -1087,7 +1087,8 @@ function registerServiceWorker() {
   if (!("serviceWorker" in navigator)) return;
   window.addEventListener("load", async () => {
     try {
-      await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+      // Use relative URLs so this works from subpaths (e.g. GitHub Pages /Training-/).
+      await navigator.serviceWorker.register("./sw.js", { scope: "./" });
     } catch (e) {
       // Non-fatal
     }
@@ -1155,4 +1156,3 @@ function yearsBetween(birthIso, atIso) {
   if (m < 0 || (m === 0 && a.getDate() < b.getDate())) years--;
   return years;
 }
-
