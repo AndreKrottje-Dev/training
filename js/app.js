@@ -31,7 +31,18 @@ const SEED_STATE = {
         ]
       },
       "1": {
-        training: [{ title: "Training", details: "eGym (2x12 negatief) + 15 min roeien", caloriesKcal: null }],
+        // Dinsdag
+        training: [
+          { title: "EGYM: Leg Press", details: "", caloriesKcal: null },
+          { title: "EGYM: Back Extension", details: "", caloriesKcal: null },
+          { title: "EGYM: Abdominal Crunch", details: "", caloriesKcal: null },
+          { title: "EGYM: Lat Pulldown", details: "", caloriesKcal: null },
+          { title: "EGYM: Chest Press", details: "", caloriesKcal: null },
+          { title: "EGYM: Seated Row", details: "", caloriesKcal: null },
+          { title: "EGYM: Leg Curl", details: "", caloriesKcal: null },
+          { title: "EGYM: Leg Extension", details: "", caloriesKcal: null },
+          { title: "Roeien", details: "15 min", caloriesKcal: null }
+        ],
         voeding: [
           { title: "Ontbijt", details: "2 krentenbrood + boter + kaas • Eiwit: 15g", caloriesKcal: 400 },
           { title: "Lunch", details: "8 volkoren boterhammen (4 pindakaas, 2 kaas, 2 kip) • Eiwit: 35g", caloriesKcal: 650 },
@@ -49,7 +60,8 @@ const SEED_STATE = {
         ]
       },
       "3": {
-        training: [{ title: "Training", details: "25 min rustig roeien (alleen cardio)", caloriesKcal: null }],
+        // Donderdag
+        training: [{ title: "Roeien", details: "25 min rustig (alleen cardio)", caloriesKcal: null }],
         voeding: [
           { title: "Ontbijt", details: "2 krentenbrood + boter + kaas • Eiwit: 15g", caloriesKcal: 400 },
           { title: "Lunch", details: "8 volkoren boterhammen (4 pindakaas, 2 kaas, 2 kip) • Eiwit: 35g", caloriesKcal: 650 },
@@ -58,7 +70,18 @@ const SEED_STATE = {
         ]
       },
       "4": {
-        training: [{ title: "Training", details: "eGym (2x12 negatief) -> 10 min roeien", caloriesKcal: null }],
+        // Vrijdag
+        training: [
+          { title: "EGYM: Leg Press", details: "", caloriesKcal: null },
+          { title: "EGYM: Back Extension", details: "", caloriesKcal: null },
+          { title: "EGYM: Abdominal Crunch", details: "", caloriesKcal: null },
+          { title: "EGYM: Lat Pulldown", details: "", caloriesKcal: null },
+          { title: "EGYM: Chest Press", details: "", caloriesKcal: null },
+          { title: "EGYM: Seated Row", details: "", caloriesKcal: null },
+          { title: "EGYM: Leg Curl", details: "", caloriesKcal: null },
+          { title: "EGYM: Leg Extension", details: "", caloriesKcal: null },
+          { title: "Roeien", details: "10 min", caloriesKcal: null }
+        ],
         voeding: [
           { title: "Ontbijt", details: "2 krentenbrood + boter + kaas • Eiwit: 15g", caloriesKcal: 400 },
           { title: "Lunch", details: "8 volkoren boterhammen (4 pindakaas, 2 kaas, 2 kip) • Eiwit: 35g", caloriesKcal: 650 },
@@ -76,7 +99,18 @@ const SEED_STATE = {
         ]
       },
       "6": {
-        training: [{ title: "Training", details: "eGym (2x12 negatief) + 15 min roeien", caloriesKcal: null }],
+        // Zondag
+        training: [
+          { title: "EGYM: Leg Press", details: "", caloriesKcal: null },
+          { title: "EGYM: Back Extension", details: "", caloriesKcal: null },
+          { title: "EGYM: Abdominal Crunch", details: "", caloriesKcal: null },
+          { title: "EGYM: Lat Pulldown", details: "", caloriesKcal: null },
+          { title: "EGYM: Chest Press", details: "", caloriesKcal: null },
+          { title: "EGYM: Seated Row", details: "", caloriesKcal: null },
+          { title: "EGYM: Leg Curl", details: "", caloriesKcal: null },
+          { title: "EGYM: Leg Extension", details: "", caloriesKcal: null },
+          { title: "Roeien", details: "15 min", caloriesKcal: null }
+        ],
         voeding: [
           { title: "Ontbijt", details: "2 krentenbrood + boter + kaas • Eiwit: 15g", caloriesKcal: 400 },
           { title: "Lunch", details: "8 volkoren boterhammen (4 pindakaas, 2 kaas, 2 kip) • Eiwit: 35g", caloriesKcal: 650 },
@@ -1336,6 +1370,17 @@ function weeklyTemplateEditor() {
   if (!state.templates.weekly) state.templates.weekly = {};
 
   const wrap = document.createElement("div");
+
+  const resetBtn = button("Standaard schema laden", "primary", () => {
+    if (!confirm("Standaard weektemplate laden? Dit overschrijft je huidige weektemplate (je dagdata blijft staan).")) return;
+    // Deep clone the seeded template.
+    state.templates.weekly = structuredClone(SEED_STATE.templates.weekly);
+    saveState();
+    toast("Standaard schema geladen.");
+    render();
+  });
+  resetBtn.style.marginBottom = "10px";
+  wrap.appendChild(resetBtn);
 
   const weekdaySel = document.createElement("select");
   const labels = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"];
