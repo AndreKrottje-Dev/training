@@ -1862,6 +1862,8 @@ function normalizeState(obj) {
       out.templates[k] = v;
     }
   }
+  // If user already had a legacy template (single "Training" row with eGym), upgrade to the new EGYM list.
+  out.templates.weekly = upgradeWeeklyTemplateIfLegacy(out.templates.weekly);
   if (s.plans?.byDate) out.plans.byDate = s.plans.byDate;
   if (s.inbody) out.inbody = { ...out.inbody, ...s.inbody };
   out.version = APP_VERSION;
@@ -1906,6 +1908,38 @@ function isWeeklyTemplateEmpty(weekly) {
     return true;
   } catch {
     return true;
+  }
+}
+
+function upgradeWeeklyTemplateIfLegacy(weekly) {
+  // Legacy versions used a single training item like:
+  // title: "Training" details: "eGym (2x12 negatief) ..."
+  // We upgrade only the affected weekdays and keep other customizations intact.
+  try {
+    const out = structuredClone(weekly || {});
+    const seeded = SEED_STATE.templates.weekly;
+
+    for (const wd of ["1", "4", "6"]) { // Tue/Fri/Sun in our setup (0=Mon)
+      const day = out[wd];
+      if (!day || !Array.isArray(day.training)) continue;
+
+      if (day.training.length === 1) {
+        const t0 = day.training[0];
+        const title = String(t0?.title || "").toLowerCase();
+        const details = String(t0?.details || "").toLowerCase();
+        const isLegacy = title === "training" && details.includes("egym");
+        const alreadyNew = day.training.some((t) => String(t?.title || "").startsWith("EGYM:"));
+
+        if (isLegacy && !alreadyNew) {
+          out[wd] = out[wd] || { training: [], voeding: [] };
+          out[wd].training = structuredClone(seeded[wd].training);
+        }
+      }
+    }
+
+    return out;
+  } catch {
+    return weekly || {};
   }
 }
 
